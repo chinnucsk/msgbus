@@ -1,0 +1,9 @@
+%% -*- erlang -*-
+{application, msgbus,
+ [{description, "msgbus"},
+  {vsn, "0.1"},
+  {modules, []},
+  {registered, []},
+  {mod, {msgbus_app, []}},
+  {env, []},
+  {applications, [kernel, stdlib, crypto]}]}.
