@@ -64,10 +64,3 @@ b_to_l(Value) ->
         is_list(Value)	 -> [b_to_l(X) ||X<- Value];
         true             -> Value
     end.
-
-
-
-
-
-
-
