@@ -5,52 +5,36 @@
 -module(push_oss_worker).
 -include("../msgbus.hrl").
 
--export([run/2]).
+-behaviour(msgbus_work_handler).
 
-run(Msg, Number) ->
-	{MailFormat, Options}= decode_msg(Msg, Number),
-	Callback = fun(X) ->
-		callback(X)
-	end,
-	msgbus_smtp_client:send(MailFormat, Options, Callback).
+-export([run/1]).
 
+run(ArgTuple) ->
+	{_Connect, _Channel, _QueueName, Msg} = ArgTuple,
+	{FilePath, Bucket, Key} = decode_msg(Msg),
+	Cmd = io_lib:format("/opt/oss_python_cmd/osscmd put ~s oss://~s/~s", [FilePath, Bucket, Key]),
+	try
+		os:cmd(Cmd),
+		lager:info("Command: ~s ...............~n", [Cmd])
+	catch _A:_B ->
+		lager:error("!!!Error!!!!!!!!!!!!!!!1~p!!!!~p", [_A, _B]),
+		callback(ArgTuple)
+	end.
 
 %%return Record Mail_format and Options
-decode_msg(Msg, MailNumber) ->
+decode_msg(Msg) ->
 	{struct, List}= mochijson2:decode(Msg),
+	FilePath= get_value(<<"filepath">>, List),
+	Bucket	= get_value(<<"bucket">>, List),
+	Key		= get_value(<<"key">>, List),
+	{FilePath, Bucket, Key}.
 
-	Number = integer_to_list((MailNumber rem 5 ) + 1),
-	Username = "system" ++ Number ++ "@vips100.com",
-
-	MailFormat = #mail_format{
-		%from = get_value(<<"from">>, List),
-		from = Username,
-		to = get_value(<<"to">>, List),
-		subject = get_value(<<"subject">>, List),
-		display_from = get_value(<<"display_from">>, List),
-		display_to = get_value(<<"display_to">>, List),
-		body = get_value(<<"body">>, List)
-    },
-	Options = [
-		{relay, "smtp.qiye.163.com"},
-        {username, Username},
-        {password, "vips100"},
-        {port, 25},
-        {hostname, "lenovo"},
-        {retries, 3},
-        {ssl, false}
-	],
-	{MailFormat, Options}.
-	
-callback(X) ->
-	case X of
-	     {ok, _} ->
-	         lager:info("Send Mail Success");
-	     {error, Reason} ->
-	         lager:error("A error occur:~p", [Reason]);
-	     {error, Reason1, Reason2} ->
-	         lager:error("A error occur::::: Reason: ~p ->>>>>~p", [Reason1, Reason2])
-	end.
+callback(ArgTuple) ->
+	% todo
+	% i will be send this msg to an another queue
+	{_Connect, Channel, QueueName, Msg} = ArgTuple,
+	rabbitc:push_message(Channel, QueueName, Msg),
+	lager:error("!!!An error occured !!! Msg: ~p", [Msg]).
 
 get_value(Key, List) ->
 	Value = proplists:get_value(Key, List),

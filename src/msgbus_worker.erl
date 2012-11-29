@@ -94,19 +94,6 @@ handle_call(_Request, _From, State) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
 
-%%handle_cast({free_socket, Socket}, State) ->
-%%	Sockets = State#state.sockets,
-%%	Numbers = State#state.numbers,
-%%	?dbg2("Free Socket:~p ", [Socket]),
-%%	case Socket of 
-%%		{error,_} ->
-%%			{noreply, #state{ sockets=Sockets, numbers=Numbers } };
-%%		_ ->
-%%			inet:setopts(Socket, [{active, once}]),
-%%			{noreply, #state{ sockets=[Socket|Sockets], numbers=Numbers+1 }} 
-%%	end;
-
-
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -126,7 +113,8 @@ handle_info(kickoff, State) ->
 			erlang:send_after(2000, self(), kickoff),
 			{noreply, State};
 		{Tag, Message} ->
-			do_job(State#state.config, Message, State#state.success),
+			Connection = State#state.connection,
+			do_job(State#state.config, {Connection, Channel, Queue, Message}),
 			rabbitc:ack_message(Channel, Tag),
 			self() ! kickoff,
 			Successes = State#state.success +1 ,
@@ -172,8 +160,9 @@ connect_amqp_server(ConfigProplists) ->
 	{Connection, Channel, Queue}.
 	
 
-do_job(Config, Message, SuccessNumber) ->
+do_job(Config, MessageArgs) ->
 	Worker = list_to_atom(proplists:get_value("worker", Config)),
+	{Connect, Channel, QueueName, Message} = MessageArgs,
 	{amqp_msg, _MsgHeader, Msg} = Message,
 	Msg1 = binary_to_list(Msg),
-	Worker:run(Msg1, SuccessNumber).
+	Worker:run({Connect, Channel, QueueName, Msg1}).
