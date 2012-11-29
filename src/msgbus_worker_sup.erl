@@ -21,9 +21,6 @@
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-start() ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
-
 stop() ->
 	supervisor:which_children(?MODULE).
 
