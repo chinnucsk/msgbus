@@ -1,0 +1,6 @@
+#!/bin/sh
+CONVERT_EXE=/usr/local/bin/convert
+CONVERT_ARG_SMALL=" -sample 74x52 "
+CONVERT_ARG_BIG=" -sample 280x280 "
+$CONVERT_EXE $CONVERT_ARG_SMALL $1 $2
+$CONVERT_EXE $CONVERT_ARG_BIG $1 $3

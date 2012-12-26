@@ -1,0 +1,126 @@
+%Last modified: 2012-07-31 23:11:20
+%Author: BlackAnimal <ronalfei@gmaill.com>
+%Create by vim: ts=4
+
+-module(create_preview_worker).
+-include("../msgbus.hrl").
+
+-behaviour(msgbus_work_handler).
+
+-export([run/1]).
+
+run(ArgTuple) ->
+	{_Connect, _Channel, _QueueName, Msg} = ArgTuple,
+	{FilePath, Ext, TargetPath, Option} = decode_msg(Msg),
+	try
+		sample(Ext, FilePath, TargetPath, Option)
+	catch _A:_B ->
+		lager:error("!!!Error!!!!!!!!!!!!!!!1~p!!!!~p", [_A, _B]),
+		callback(ArgTuple)
+	end.
+
+%%return Record Mail_format and Options
+decode_msg(Msg) ->
+	{struct, List} = mochijson2:decode(Msg),
+	FilePath	= get_value(<<"filepath">>, List),
+	Ext			= get_value(<<"ext">>, List),
+	TargetPath	= get_value(<<"targetpath">>, List),
+	Option		= get_value(<<"option">>, List),
+	{FilePath, Ext, TargetPath, Option}.
+
+callback(ArgTuple) ->
+	% todo
+	% this will be send this msg to an another queue
+	{_Connect, Channel, QueueName, Msg} = ArgTuple,
+	rabbitc:push_message(Channel, QueueName, Msg),
+	lager:error("!!!An error occured !!! Msg: ~p", [Msg]).
+
+get_value(Key, List) ->
+	Value = proplists:get_value(Key, List),
+	b_to_l(Value).
+
+
+b_to_l(Value) ->
+    if
+        is_binary(Value) -> binary_to_list(Value);
+        %is_list(Value)	 -> lists:flatten([b_to_l(X) ||X<- Value]);
+        is_list(Value)	 -> [b_to_l(X) ||X<- Value];
+        true             -> Value
+    end.
+
+
+%%----------------sample---------
+
+sample("jpeg", Src, Trg, Option) ->
+	sample("image", Src, Trg, Option);
+
+sample("jpg", Src, Trg, Option) ->
+	sample("image", Src, Trg, Option);
+
+sample("png", Src, Trg, Option) ->
+	sample("image", Src, Trg, Option);
+
+sample("gif", Src, Trg, Option) ->
+	sample("image", Src, Trg, Option);
+
+sample("image", Src, Trg, _Option) ->
+	Trg1 = Trg ++ ".thumb",
+	Trg2 = Trg ++ ".preview",
+    Command = io_lib:format("./script/timeout.sh -t 120 ./script/imgConvert ~s ~s ~s", [Src, Trg1, Trg2]),
+    lager:debug("command: ~s", [Command]),
+    os:cmd( Command );
+
+sample("mp3", Src, Trg, Option) ->
+	sample("audio", Src, Trg, Option);
+
+sample("audio", Src, Trg, _Option) ->
+	Trg1 = Trg ++ ".preview",
+    Command = io_lib:format("./script/timeout.sh -t 120 ./script/ffConvert ~s ~s", [Src, Trg1]),
+    lager:debug("command: ~s", [Command]),
+    os:cmd( Command );
+
+sample("rmvb", Src, Trg, _Option) ->
+	UUID = util:uuid(),
+    Tmp = io_lib:format("/tmp/~s~s", [UUID, ".avi"]),
+    Command1 = io_lib:format("./script/timeout.sh -t 300 ./script/menConvert ~s ~s", [Src, Tmp]),
+    lager:debug("command1: ~s", [Command1]),
+	Trg2 = Trg ++ ".preview",
+	Trg1 = Trg ++ ".thumb",
+    Command2 = io_lib:format("./script/timeout.sh -t 300 ./script/ffConvert ~s ~s ~s", [Tmp, Trg1, Trg2]),
+    lager:debug("command2: ~s", [Command2]),
+    Command3 = io_lib:format("rm -rf ~s", [Tmp]),
+    lager:debug("command3: ~s", [Command3]),
+    [ os:cmd(Command) || Command<-[Command1, Command2, Command3] ];
+
+sample("mpeg", Src, Trg, Option) ->
+	sample("video", Src, Trg, Option);
+
+sample("mpg", Src, Trg, Option) ->
+	sample("video", Src, Trg, Option);
+
+sample("mkv", Src, Trg, Option) ->
+	sample("video", Src, Trg, Option);
+
+sample("video", Src, Trg, _Option) ->
+	Trg2 = Trg ++ ".preview",
+	Trg1 = Trg ++ ".thumb",
+    Command = io_lib:format("./script/timeout.sh -t 300 ./script/ffConvert ~s ~s ~s", [Src, Trg1, Trg2]),
+    lager:debug("command: ~s", [Command]),
+    os:cmd ( Command );
+
+sample("pdf", Src, Trg, _Option) ->
+	Trg1 = Trg ++ ".preview",
+    Command = io_lib:format("./script/timeout.sh -t 300 ./script/pdfConvert ~s ~s ", [Src, Trg1]),
+    lager:debug("command: ~s", [Command]),
+    os:cmd ( Command );
+
+sample("doc", Src, Trg, _Option) ->
+    FileType = "doc",
+	Trg1 = Trg ++ ".preview",
+    Command = io_lib:format("./script/timeout.sh -t 300 ./script/docConvert ~s ~s ~s", [Src, Trg1, FileType]),
+    lager:debug("command: ~s", [Command]),
+    os:cmd ( Command );
+
+sample(Ext, _Src, _Trg, _Option) ->
+	lager:waring("----------------------------------nothing to need sample~n", [Ext]).
+

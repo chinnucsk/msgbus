@@ -22,4 +22,4 @@
 	}
 ).
 
-
+-define(SCRIPT_PREFIX, "/opt/msgbus/script/").

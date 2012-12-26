@@ -2,7 +2,7 @@
 %Author: BlackAnimal <ronalfei@gmaill.com>
 %Create by vim: ts=4
 
--module(push_oss_worker).
+-module(push_oss_revision_worker).
 -include("../msgbus.hrl").
 
 -behaviour(msgbus_work_handler).

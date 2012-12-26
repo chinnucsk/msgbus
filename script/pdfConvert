@@ -1,0 +1,5 @@
+#!/bin/bash
+pdf2swf -p 1-10 $1 -o $2 -s languagedir=/opt/xpdf -s asprint -T 9 -S
+#swf_filename=`basename $2`
+#curl -d collection=ent -d pool=previews -d uid=$3 -d rid=$4 -d name=$swf_filename -d src=cache -d dst=oss http://127.0.0.1:9070/fRail/sync
+

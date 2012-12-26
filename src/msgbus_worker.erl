@@ -110,7 +110,7 @@ handle_info(kickoff, State) ->
 	Queue	= State#state.queue,
 	case rabbitc:pull_message(Channel, Queue) of
 		{false, empty} ->
-			erlang:send_after(2000, self(), kickoff),
+			erlang:send_after(5000, self(), kickoff),
 			{noreply, State};
 		{Tag, Message} ->
 			Connection = State#state.connection,

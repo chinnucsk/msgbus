@@ -1,0 +1,6 @@
+#!/bin/bash
+CONVERT_CMD="/opt/openoffice.org3/program/python /opt/DocumentConverter.py"
+TMPFILE=`date +%N`
+$CONVERT_CMD $1 "/opt/tmp/$TMPFILE.pdf" $3  && pdf2swf "/opt/tmp/$TMPFILE.pdf" -p 1-50 -o $2 -s languagedir=/opt/xpdf -s asprint -T 9 -S
+#swf_filename=`basename $2`
+#curl -d collection=ent -d pool=previews -d uid=$4 -d rid=$5 -d name=$swf_filename -d src=cache -d dst=oss http://127.0.0.1:9070/fRail/sync

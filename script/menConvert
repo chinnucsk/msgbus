@@ -1,0 +1,4 @@
+#!/bin/sh
+MENCODER_EXE=/usr/local/bin/mencoder
+MENCODER_ARG=" -ss 60 -endpos 60 -srate 22050 -vf scale=272:204 -ofps 12 -oac mp3lame -lameopts mode=3:cbr:br=24 -ovc lavc -ffourcc DX50 -lavcopts vcodec=mpeg4:vhq:vbitrate=112 " 
+$MENCODER_EXE $MENCODER_ARG $1 -o $2
