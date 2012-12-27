@@ -1,7 +1,9 @@
 #!/bin/bash
 #FFMPEG_EXE=/usr/local/bin/ffmpeg
 FFMPEG_EXE=/usr/local/bin/ffmpeg
-$FFMPEG_EXE -y -i $1 -ss 00:00:00 -ar 44100 -ab 64 -ac 1 -t 60 -s 272*204 $2
+TMPFILE=$2".flv"
+$FFMPEG_EXE -y -i $1 -ss 00:00:00 -ar 44100 -ab 64 -ac 1 -t 30 -s 272*204 $TMPFILE
+mv $TMPFILE $2
 if [ $3 ]; then
 #	echo "VIDEO"
 	$FFMPEG_EXE -y -i $2 -f image2 -ss 8 -sameq -t 0.001 -s 74*52 $3

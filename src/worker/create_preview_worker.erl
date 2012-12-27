@@ -70,6 +70,27 @@ sample("image", Src, Trg, _Option) ->
     lager:debug("command: ~s", [Command]),
     os:cmd( Command );
 
+type_by_binary(<<"ogg">>) ->  <<"audio/ogg">>;
+type_by_binary(<<"ra">>) ->  <<"audio/x-realaudio">>;
+type_by_binary(<<"mid">>) ->  <<"audio/midi">>;
+type_by_binary(<<"midi">>) ->  <<"audio/midi">>;
+type_by_binary(<<"kar">>) ->  <<"audio/midi">>;
+
+sample("ogg", Src, Trg, Option) ->
+	sample("audio", Src, Trg, Option);
+
+sample("ra", Src, Trg, Option) ->
+	sample("audio", Src, Trg, Option);
+
+sample("mid", Src, Trg, Option) ->
+	sample("audio", Src, Trg, Option);
+
+sample("midi", Src, Trg, Option) ->
+	sample("audio", Src, Trg, Option);
+
+sample("kar", Src, Trg, Option) ->
+	sample("audio", Src, Trg, Option);
+
 sample("mp3", Src, Trg, Option) ->
 	sample("audio", Src, Trg, Option);
 
@@ -98,12 +119,36 @@ sample("mpeg", Src, Trg, Option) ->
 sample("mpg", Src, Trg, Option) ->
 	sample("video", Src, Trg, Option);
 
+sample("3gpp", Src, Trg, Option) ->
+	sample("video", Src, Trg, Option);
+
+sample("mov", Src, Trg, Option) ->
+	sample("video", Src, Trg, Option);
+
+sample("flv", Src, Trg, Option) ->
+	sample("video", Src, Trg, Option);
+
+sample("mng", Src, Trg, Option) ->
+	sample("video", Src, Trg, Option);
+
+sample("asf", Src, Trg, Option) ->
+	sample("video", Src, Trg, Option);
+
+sample("asx", Src, Trg, Option) ->
+	sample("video", Src, Trg, Option);
+
+sample("wmv", Src, Trg, Option) ->
+	sample("video", Src, Trg, Option);
+
+sample("avi", Src, Trg, Option) ->
+	sample("video", Src, Trg, Option);
+
 sample("mkv", Src, Trg, Option) ->
 	sample("video", Src, Trg, Option);
 
 sample("video", Src, Trg, _Option) ->
-	Trg2 = Trg ++ ".preview",
-	Trg1 = Trg ++ ".thumb",
+	Trg1 = Trg ++ ".preview",
+	Trg2 = Trg ++ ".thumb",
     Command = io_lib:format("./script/timeout.sh -t 300 ./script/ffConvert ~s ~s ~s", [Src, Trg1, Trg2]),
     lager:debug("command: ~s", [Command]),
     os:cmd ( Command );
