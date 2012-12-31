@@ -4,6 +4,8 @@
 
 -module(create_preview_worker).
 -include("../msgbus.hrl").
+-include_lib("kernel/include/file.hrl").
+-include_lib("stdlib/include/zip.hrl").
 
 -behaviour(msgbus_work_handler).
 
@@ -53,6 +55,33 @@ b_to_l(Value) ->
 
 %%----------------sample---------
 
+sample("rar", Src, Trg, _Option) ->
+	Trg1 = Trg ++ ".preview",
+    Command = io_lib:format("./script/timeout.sh -t 120 ./script/rarConvert ~s ~s", [Src, Trg1]),
+    lager:debug("command: ~s", [Command]),
+    os:cmd( Command );
+
+
+sample("zip", Src, Trg, _Option) ->
+	Trg1 = Trg ++ ".preview",
+    Command = io_lib:format("./script/timeout.sh -t 120 ./script/zipConvert ~s ~s", [Src, Trg1]),
+    lager:debug("command: ~s", [Command]),
+    os:cmd( Command );
+
+%%	{ok, [{zip_comment, _ } | ZipList]} = zip:table(Src),
+%%	lager:debug("~n zip list is ~p ", [ZipList]),
+%%	Result = lists:foldl(
+%%		fun(X, Result) ->
+%%			Name = list_to_binary(os:cmd("iconv -f gbk -t utf8 X#zip_file.name, latin1")),
+%%			FileInfo = X#zip_file.info,
+%%			[[{<<"filename">>, Name}, {<<"filetype">>, FileInfo#file_info.type}, {<<"filesize">>, FileInfo#file_info.size}] | Result]
+%%		end,
+%%		[], ZipList),
+%%	Json = mochijson2:encode(Result),
+%%	%Json = "[]",
+%%	lager:debug("zip list json is :~p", [Json]),
+%%	file:write_file(Trg++".preview", Json);
+	
 sample("jpeg", Src, Trg, Option) ->
 	sample("image", Src, Trg, Option);
 
@@ -205,11 +234,11 @@ sample("pptx", Src, Trg, _Option) ->
 
 sample("rtf", Src, Trg, _Option) ->
     sample_office("rtf", Src, Trg);
-
 %%----------------------------------
 
 sample(_AnyExt, _Src, _Trg, _Option) ->
 	lager:warning("----------------------------------nothing to need sample ~s ~n", [_AnyExt]).
+
 
 %%-------------------------------------
 %%------this is sample for office family

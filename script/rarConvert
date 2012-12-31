@@ -1,0 +1,51 @@
+#!/opt/app/php/bin/php
+<?php
+$src=$argv[1];
+$trg=$argv[2];
+echo $src, $trg;
+
+
+
+$rar_file = rar_open($src) or die("Can't open Rar archive");
+
+$entries = rar_list($rar_file);
+
+foreach ($entries as $entry) {
+	$filename = $entry->getName();
+	if(is_utf8($filename)===false){
+		$filename = iconv('gbk', 'utf-8', $filename);
+	}
+	$filesize = $entry->getUnpackedSize();
+	if($entry->isDirectory()==true){
+		$filetype = 'directory';
+	}else{
+		$filetype = 'file';
+	}
+    $json[] = Array('filename' => $filename,
+					'filesize' => $filesize,
+					'filetype' => $filetype,
+					);
+
+}
+rar_close($rar_file);
+
+$json = array_reverse($json);
+var_export($json);
+file_put_contents($trg, json_encode($json));
+
+
+
+// Returns true if $string is valid UTF-8 and false otherwise.
+function is_utf8($word)
+{
+	if (preg_match("/^([".chr(228)."-".chr(233)."]{1}[".chr(128)."-".chr(191)."]{1}[".chr(128)."-".chr(191)."]{1}){1}/",$word) == true || preg_match("/([".chr(228)."-".chr(233)."]{1}[".chr(128)."-".chr(191)."]{1}[".chr(128)."-".chr(191)."]{1}){1}$/",$word) == true || preg_match("/([".chr(228)."-".chr(233)."]{1}[".chr(128)."-".chr(191)."]{1}[".chr(128)."-".chr(191)."]{1}){2,}/",$word) == true)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+} // function is_utf8
+
+?>

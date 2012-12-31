@@ -1,0 +1,54 @@
+#!/opt/app/php/bin/php
+<?php
+$src=$argv[1];
+$trg=$argv[2];
+echo $src, $trg;
+//$zip= zip_open($src);
+//while($tmp = zip_read($zip)){
+//	$json[] = array('filename' => zip_entry_name($tmp),'filesize' => zip_entry_filesize($tmp));
+//}
+//
+//var_dump($json);
+//
+
+$zip = new ZipArchive;
+$json = array();
+if ($zip->open($src) === TRUE) {
+	
+	for($i=0; $i<$zip->numFiles; $i++){
+		$tmp = $zip->statIndex($i);
+		//var_dump($tmp);
+		if(is_utf8($tmp['name'])===true){
+			$json[$i]['filename'] = addslashes($tmp['name']);
+		}else{
+			$json[$i]['filename'] = iconv('gbk','utf-8',addslashes($tmp['name']));
+		}
+		$json[$i]['filesize'] = $tmp['size'];
+		$json[$i]['crc'] = $tmp['crc'];
+		$json[$i]['filetype'] = empty($tmp['comp_method'])?'directory':'file';
+		unset($tmp);
+	}
+	$zip->close();
+} else {
+	echo 'failed';
+}
+	$json = array_reverse($json);
+var_export($json);
+file_put_contents($trg, json_encode($json));
+
+
+
+// Returns true if $string is valid UTF-8 and false otherwise.
+function is_utf8($word)
+{
+	if (preg_match("/^([".chr(228)."-".chr(233)."]{1}[".chr(128)."-".chr(191)."]{1}[".chr(128)."-".chr(191)."]{1}){1}/",$word) == true || preg_match("/([".chr(228)."-".chr(233)."]{1}[".chr(128)."-".chr(191)."]{1}[".chr(128)."-".chr(191)."]{1}){1}$/",$word) == true || preg_match("/([".chr(228)."-".chr(233)."]{1}[".chr(128)."-".chr(191)."]{1}[".chr(128)."-".chr(191)."]{1}){2,}/",$word) == true)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+} // function is_utf8
+
+?>
