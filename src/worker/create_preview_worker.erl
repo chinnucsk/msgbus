@@ -12,10 +12,12 @@
 run(ArgTuple) ->
 	{_Connect, _Channel, _QueueName, Msg} = ArgTuple,
 	{FilePath, Ext, TargetPath, Option} = decode_msg(Msg),
+
+	%sample(Ext, FilePath, TargetPath, Option).
 	try
 		sample(Ext, FilePath, TargetPath, Option)
 	catch _A:_B ->
-		lager:error("!!!Error!!!!!!!!!!!!!!!1~p!!!!~p", [_A, _B]),
+		lager:error("!!!Error!!!!!!!!!!!!!!!~n~p!!!!~n~p~n", [_A, _B]),
 		callback(ArgTuple)
 	end.
 
@@ -70,12 +72,6 @@ sample("image", Src, Trg, _Option) ->
     lager:debug("command: ~s", [Command]),
     os:cmd( Command );
 
-type_by_binary(<<"ogg">>) ->  <<"audio/ogg">>;
-type_by_binary(<<"ra">>) ->  <<"audio/x-realaudio">>;
-type_by_binary(<<"mid">>) ->  <<"audio/midi">>;
-type_by_binary(<<"midi">>) ->  <<"audio/midi">>;
-type_by_binary(<<"kar">>) ->  <<"audio/midi">>;
-
 sample("ogg", Src, Trg, Option) ->
 	sample("audio", Src, Trg, Option);
 
@@ -91,8 +87,11 @@ sample("midi", Src, Trg, Option) ->
 sample("kar", Src, Trg, Option) ->
 	sample("audio", Src, Trg, Option);
 
-sample("mp3", Src, Trg, Option) ->
-	sample("audio", Src, Trg, Option);
+sample("mp3", Src, Trg, _Option) ->
+	Trg1 = Trg ++ ".preview",
+    Command = io_lib:format("./script/timeout.sh -t 120 cp ~s ~s", [Src, Trg1]),
+    lager:debug("command: ~s", [Command]),
+    os:cmd( Command );
 
 sample("audio", Src, Trg, _Option) ->
 	Trg1 = Trg ++ ".preview",
@@ -100,13 +99,16 @@ sample("audio", Src, Trg, _Option) ->
     lager:debug("command: ~s", [Command]),
     os:cmd( Command );
 
+sample("rm", Src, Trg, Option) ->
+	sample("rmvb", Src, Trg, Option);
+
 sample("rmvb", Src, Trg, _Option) ->
 	UUID = util:uuid(),
-    Tmp = io_lib:format("/tmp/~s~s", [UUID, ".avi"]),
+    Tmp = io_lib:format("/dev/shm/~s~s", [UUID, ".avi"]),
     Command1 = io_lib:format("./script/timeout.sh -t 300 ./script/menConvert ~s ~s", [Src, Tmp]),
     lager:debug("command1: ~s", [Command1]),
-	Trg2 = Trg ++ ".preview",
-	Trg1 = Trg ++ ".thumb",
+	Trg1 = Trg ++ ".preview",
+	Trg2 = Trg ++ ".thumb",
     Command2 = io_lib:format("./script/timeout.sh -t 300 ./script/ffConvert ~s ~s ~s", [Tmp, Trg1, Trg2]),
     lager:debug("command2: ~s", [Command2]),
     Command3 = io_lib:format("rm -rf ~s", [Tmp]),
@@ -119,13 +121,16 @@ sample("mpeg", Src, Trg, Option) ->
 sample("mpg", Src, Trg, Option) ->
 	sample("video", Src, Trg, Option);
 
+sample("mp4", Src, Trg, Option) ->
+	sample("video", Src, Trg, Option);
+
 sample("3gpp", Src, Trg, Option) ->
 	sample("video", Src, Trg, Option);
 
-sample("mov", Src, Trg, Option) ->
+sample("3gp", Src, Trg, Option) ->
 	sample("video", Src, Trg, Option);
 
-sample("flv", Src, Trg, Option) ->
+sample("mov", Src, Trg, Option) ->
 	sample("video", Src, Trg, Option);
 
 sample("mng", Src, Trg, Option) ->
@@ -143,6 +148,9 @@ sample("wmv", Src, Trg, Option) ->
 sample("avi", Src, Trg, Option) ->
 	sample("video", Src, Trg, Option);
 
+sample("m4v", Src, Trg, Option) ->
+	sample("video", Src, Trg, Option);
+
 sample("mkv", Src, Trg, Option) ->
 	sample("video", Src, Trg, Option);
 
@@ -153,19 +161,62 @@ sample("video", Src, Trg, _Option) ->
     lager:debug("command: ~s", [Command]),
     os:cmd ( Command );
 
+sample("flv", Src, Trg, _Option) ->
+	Trg1 = Trg ++ ".preview",
+    Command = io_lib:format("./script/timeout.sh -t 120 cp ~s ~s", [Src, Trg1]),
+    lager:debug("command: ~s", [Command]),
+    os:cmd( Command );
+
 sample("pdf", Src, Trg, _Option) ->
 	Trg1 = Trg ++ ".preview",
     Command = io_lib:format("./script/timeout.sh -t 300 ./script/pdfConvert ~s ~s ", [Src, Trg1]),
     lager:debug("command: ~s", [Command]),
     os:cmd ( Command );
 
+sample("txt", Src, Trg, _Option) ->
+	sample_office("txt", Src, Trg);
+	%%Trg1 = Trg ++ ".preview",
+    %%Command = io_lib:format("./script/timeout.sh -t 120 cp ~s ~s", [Src, Trg1]),
+    %%lager:debug("command: ~s", [Command]),
+    %%os:cmd( Command );
+
+
+%%office farmily-------------------
+sample("docx", Src, Trg, _Option) ->
+	sample_office("docx", Src, Trg);
+
 sample("doc", Src, Trg, _Option) ->
-    FileType = "doc",
-	Trg1 = Trg ++ ".preview",
+	sample_office("doc", Src, Trg);
+
+sample("xls", Src, Trg, _Option) ->
+    sample_office("xls", Src, Trg);
+
+sample("csv", Src, Trg, _Option) ->
+    sample_office("csv", Src, Trg);
+
+sample("xlsm", Src, Trg, _Option) ->
+    sample_office("xlsm", Src, Trg);
+
+sample("ppt", Src, Trg, _Option) ->
+    sample_office("ppt", Src, Trg);
+
+sample("pptx", Src, Trg, _Option) ->
+    sample_office("pptx", Src, Trg);
+
+sample("rtf", Src, Trg, _Option) ->
+    sample_office("rtf", Src, Trg);
+
+%%----------------------------------
+
+sample(_AnyExt, _Src, _Trg, _Option) ->
+	lager:warning("----------------------------------nothing to need sample ~s ~n", [_AnyExt]).
+
+%%-------------------------------------
+%%------this is sample for office family
+sample_office(FileType, Src, Trg) ->
+    Trg1 = Trg ++ ".preview",
     Command = io_lib:format("./script/timeout.sh -t 300 ./script/docConvert ~s ~s ~s", [Src, Trg1, FileType]),
     lager:debug("command: ~s", [Command]),
-    os:cmd ( Command );
+    os:cmd ( Command ).
 
-sample(Ext, _Src, _Trg, _Option) ->
-	lager:waring("----------------------------------nothing to need sample~n", [Ext]).
 
