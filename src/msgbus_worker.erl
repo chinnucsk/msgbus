@@ -33,6 +33,10 @@ stop(Config) ->
 	WorkerName = proplists:get_value("queue", Config),
     gen_server:call(WorkerName, stop).
 
+%worker will be defined in worker.conf
+put_message(WorkerName, Message) ->
+    gen_server:call(WorkerName, {put, Message}).
+
 
 
 %status(WorkerName) -> 
@@ -75,12 +79,15 @@ handle_call(stop,_From, State) ->
 	lager:info("worker is stoped"),
 	{stop, shutdown,stoped, #state{} };
 
+%Message type is proplists
+handle_call({put, Message}, _From, State) ->
+    Channel     = State#state.channel,
+    QueueName   = State#state.queue,
+    Msg = mochijson2:encode(Message),
+    %lager:debug("json msg is ~p..............~n", [Msg]),
+    rabbitc:push_message(Channel, QueueName, Msg),
+    { reply, {ok, Msg} , State};
 
-%%handle_call(status, _From, State) ->
-%%	Socket_list = State#state.sockets,
-%%	Socket_nums = State#state.numbers,
-%%	{ reply, {Socket_nums, Socket_list} , State};
-%%
 
 handle_call(_Request, _From, State) ->
     Reply = ok,

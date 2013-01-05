@@ -1,5 +1,8 @@
 #!/opt/app/php/bin/php
 <?php
+set_time_limit(0);
+ini_set('memory_limit','1024M');
+
 $src=$argv[1];
 $trg=$argv[2];
 echo $src, $trg;
@@ -30,7 +33,7 @@ foreach ($entries as $entry) {
 rar_close($rar_file);
 
 $json = array_reverse($json);
-var_export($json);
+$json = format($json);
 file_put_contents($trg, json_encode($json));
 
 
@@ -47,5 +50,57 @@ function is_utf8($word)
 		return false;
 	}
 } // function is_utf8
+
+function format($array)
+{
+	$return  = array(); // 返回的数组
+	$j = 1; //文件夹层数
+	// 循环控制
+	while(count($array)>0){
+		//遍历每一个元素
+		foreach($array as $k=>$v){
+			//把文件路径转换为数组
+			$test_arr = explode('/',$v['filename']);
+			//吧文件名称去掉
+			$i = count($test_arr);
+			//层数大于当前数continue
+
+			if($i == $j){
+				$tem_str = '$return';
+				$b = '';
+				if($v['filetype'] == 'file'){
+					//拼接字符串
+					array_pop($test_arr);
+					foreach($test_arr as $q){
+						$b .= '[\''.$q.'\']';
+					}
+
+					$tem_str = $tem_str.$b.'[] = $v; return $return;';
+					eval($tem_str); //执行拼接的字符才
+				}else{
+
+					//拼接字符串
+					if($j != 1){
+						array_pop($test_arr);
+					}
+					foreach($test_arr as $q){
+						$b .= '[\''.$q.'\']';
+					}
+
+					$tem_str = 'if(!isset('.$tem_str.$b.')){'.$tem_str.$b.' = array();} return $return;';
+					eval($tem_str); //执行拼接的字符才
+				}
+				$tem_str = '';
+				$b = '';
+				unset($array[$k]);
+			}else{
+				continue;
+			}
+
+		}
+		++$j;
+	}
+	return $return;
+}
 
 ?>

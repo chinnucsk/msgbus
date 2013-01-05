@@ -1,3 +1,4 @@
+% create_preview_worker for application Bee
 %Last modified: 2012-07-31 23:11:20
 %Author: BlackAnimal <ronalfei@gmaill.com>
 %Create by vim: ts=4
@@ -14,14 +15,32 @@
 run(ArgTuple) ->
 	{_Connect, _Channel, _QueueName, Msg} = ArgTuple,
 	{FilePath, Ext, TargetPath, Option} = decode_msg(Msg),
-
 	%sample(Ext, FilePath, TargetPath, Option).
 	try
 		sample(Ext, FilePath, TargetPath, Option)
 	catch _A:_B ->
 		lager:error("!!!Error!!!!!!!!!!!!!!!~n~p!!!!~n~p~n", [_A, _B]),
 		callback(ArgTuple)
-	end.
+	end,
+
+	Rid  = proplists:get_value(<<"rid">>, Option, <<"undefined">>),
+	
+	Trg1 = TargetPath++".preview",
+	Trg2 = TargetPath++".thumb",
+	Bucket = <<"bee">>,
+	Key1 = <<"preview/", Rid/binary, ".preview">>,
+	Key2 = <<"thumb/", Rid/binary, ".thumb">>,
+	OssMsg1 = [	{<<"filepath">>, Trg1}, 
+				{<<"bucket">>, Bucket}, 
+				{<<"key">>, Key1} 
+			],
+	OssMsg2 = [	{<<"filepath">>, Trg2}, 
+				{<<"bucket">>, Bucket}, 
+				{<<"key">>, Key2} 
+			],
+	lager:debug("~n ~p ~n ~p ~n", [OssMsg1, OssMsg2]),
+	msgbus_worker:put_message(push_oss, OssMsg1),
+	msgbus_worker:put_message(push_oss, OssMsg2).
 
 %%return Record Mail_format and Options
 decode_msg(Msg) ->
@@ -29,7 +48,7 @@ decode_msg(Msg) ->
 	FilePath	= get_value(<<"filepath">>, List),
 	Ext			= get_value(<<"ext">>, List),
 	TargetPath	= get_value(<<"targetpath">>, List),
-	Option		= get_value(<<"option">>, List),
+	{struct, Option}= get_value(<<"option">>, List),
 	{FilePath, Ext, TargetPath, Option}.
 
 callback(ArgTuple) ->
@@ -94,12 +113,24 @@ sample("png", Src, Trg, Option) ->
 sample("gif", Src, Trg, Option) ->
 	sample("image", Src, Trg, Option);
 
+sample("bmp", Src, Trg, Option) ->
+	sample("image", Src, Trg, Option);
+
 sample("image", Src, Trg, _Option) ->
 	Trg1 = Trg ++ ".thumb",
 	Trg2 = Trg ++ ".preview",
     Command = io_lib:format("./script/timeout.sh -t 120 ./script/imgConvert ~s ~s ~s", [Src, Trg1, Trg2]),
     lager:debug("command: ~s", [Command]),
     os:cmd( Command );
+
+sample("wav", Src, Trg, Option) ->
+	sample("audio", Src, Trg, Option);
+
+sample("wma", Src, Trg, Option) ->
+	sample("audio", Src, Trg, Option);
+
+sample("au", Src, Trg, Option) ->
+	sample("audio", Src, Trg, Option);
 
 sample("ogg", Src, Trg, Option) ->
 	sample("audio", Src, Trg, Option);
@@ -148,6 +179,9 @@ sample("mpeg", Src, Trg, Option) ->
 	sample("video", Src, Trg, Option);
 
 sample("mpg", Src, Trg, Option) ->
+	sample("video", Src, Trg, Option);
+
+sample("ogm", Src, Trg, Option) ->
 	sample("video", Src, Trg, Option);
 
 sample("mp4", Src, Trg, Option) ->
@@ -226,6 +260,9 @@ sample("csv", Src, Trg, _Option) ->
 sample("xlsm", Src, Trg, _Option) ->
     sample_office("xlsm", Src, Trg);
 
+sample("xlsx", Src, Trg, _Option) ->
+    sample_office("xlsx", Src, Trg);
+
 sample("ppt", Src, Trg, _Option) ->
     sample_office("ppt", Src, Trg);
 
@@ -234,6 +271,15 @@ sample("pptx", Src, Trg, _Option) ->
 
 sample("rtf", Src, Trg, _Option) ->
     sample_office("rtf", Src, Trg);
+
+sample("dps", Src, Trg, _Option) ->
+    sample_office("rtf", Src, Trg);
+
+sample("wps", Src, Trg, _Option) ->
+    sample_office("rtf", Src, Trg);
+
+sample("et", Src, Trg, _Option) ->
+    sample_office("et", Src, Trg);
 %%----------------------------------
 
 sample(_AnyExt, _Src, _Trg, _Option) ->
