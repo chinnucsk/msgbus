@@ -24,16 +24,19 @@ foreach ($entries as $entry) {
 	}else{
 		$filetype = 'file';
 	}
-    $json[] = Array('filename' => $filename,
-					'filesize' => $filesize,
-					'filetype' => $filetype,
+	$filetime = $entry->getFileTime();
+	$mtime = date('Y-m-d H:i:s', $filetime);
+    $json[] = Array('filename'	=> $filename,
+					'filesize'	=> $filesize,
+					'filetype'	=> $filetype,
+					'mtime'		=> $mtime,
 					);
 
 }
 rar_close($rar_file);
 
 $json = array_reverse($json);
-$json = format($json);
+//$json = format($json);
 file_put_contents($trg, json_encode($json));
 
 

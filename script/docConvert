@@ -1,5 +1,5 @@
 #!/bin/bash
-CONVERT_CMD="/opt/openoffice.org3/program/python /opt/DocumentConverter.py"
+CONVERT_CMD="/opt/openoffice.org3/program/python /opt/msgbus/script/DocumentConverter.py"
 TMPFILE=`date +%N`
 $CONVERT_CMD $1 "/opt/tmp/$TMPFILE.pdf" $3  && pdf2swf "/opt/tmp/$TMPFILE.pdf" -p 1-50 -o $2 -s languagedir=/opt/xpdf -s asprint -T 9 -S
 #swf_filename=`basename $2`
